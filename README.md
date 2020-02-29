@@ -1,2 +1,2 @@
-# Chat-Application
-This is a chat application for a school's project 
+# A Project for Full Stack course at GBC
+This chat application is built using MERN stack
