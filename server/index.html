@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <title>Chat Room</title>
+</head>
+<body>
+  
+  <form action="" id="half-width">
+    
+    <input id="change_username" placeholder="Change your username"  autocomplete="off" /> <button>Send</button>
+  </form>
+  <div id="chat-room">
+  <ul id="messages">
+    <i id="hello" ></i>
+    <div id="message-holder">
+      <!-- Message holder -->
+    </div>
+    <i id="typing" ></i>
+  </ul>
+  <form action="" id="full-width">
+    <input id="m"  autocomplete="off" /> <button>Send</button>
+  </form>
+
+<script>
+  $(function(){
+    socket = io.connect("http://localhost:3000");
+
+    // send message and display it for sender
+    $('#full-width').submit((e)=>{
+    e.preventDefault();
+    let message = document.getElementById("message-holder");
+    let li = document.createElement("li");
+    socket.emit('chat message', {message:$('#m').val()});
+    message.appendChild(li).append("You: "+ $('#m').val());
+    $('#m').val("");
+    // stop typing
+    socket.emit("stop-typing", "");
+        
+    return false;
+  });
+    // notifying when a guest joined room 
+    socket.on("notifyOthers", (data)=>{
+        let att = document.createAttribute("class");
+        let li = document.createElement("li");
+        att.value="serverMsg";
+        message = document.getElementById("messages");
+        li.setAttributeNode(att);
+        message.appendChild(li).append( ` ${data.user} has joined this room ` );
+    })
+
+    $('half-width').submit((e)=>{
+      e.preventDefault();
+      socket.emit('change username', {username: $('#change_username').val() });
+      $('#change_username').val("");
+      return false;
+    })
+
+    socket.on('hello', (data)=>{
+      let message = document.getElementById("messages");
+      let li = document.createElement("li");
+      let i = document.getElementById("hello");
+      i.append(data.msg);
+    })
+        // get message from other 
+    socket.on('message from someone',(data)=>{
+      let message = document.getElementById("message-holder");
+      let li = document.createElement("li");
+      message.appendChild(li).append(`${data.user} : ${data.message}`)
+    })
+
+    
+      //Notice room there is a user is typing
+      $('#m').bind('keypress', ()=>{
+          socket.emit('typing',"");
+      })
+
+      //listen on typing event 
+      socket.on('typing', (data)=>{
+        let message = document.getElementById("messages");
+        let li = document.createElement("li");
+        let i = document.getElementById("typing");
+        
+        i.innerHTML= "<br/>" + data.username + 'is typing ...';
+      })
+      
+      
+      
+      socket.on('stop-typing', (data)=>{
+          let i = document.getElementById("typing");
+          i.innerHTML = "";
+      } )
+  });
+</script>
+
+</body>
+</html>
